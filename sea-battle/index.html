@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Морской Бой — Онлайн</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #080c18;
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(10, 60, 120, 0.4) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(80, 20, 100, 0.25) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 100%, rgba(0, 100, 120, 0.2) 0%, transparent 50%);
+            color: #e0e6f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            overflow-y: auto;
+            user-select: none;
+        }
+
+        /* ─── Glass ─── */
+        .glass {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 22px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45);
+        }
+
+        /* ─── Typography ─── */
+        h1 {
+            font-size: 3.2rem;
+            font-weight: 800;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #00e5ff 0%, #aa66ff 50%, #ff4ea0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.25));
+        }
+        .subtitle {
+            text-align: center;
+            color: #7a8ba8;
+            font-size: 1.05rem;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+
+        /* ─── Buttons ─── */
+        .btn {
+            background: linear-gradient(135deg, #00c6ff 0%, #7c4dff 100%);
+            border: none;
+            padding: 14px 38px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 198, 255, 0.35);
+            margin: 6px;
+            letter-spacing: 0.5px;
+        }
+        .btn:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 6px 30px rgba(0, 198, 255, 0.55);
+        }
+        .btn:active { transform: translateY(1px); }
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        .btn.secondary {
+            background: transparent;
+            border: 2px solid rgba(0, 198, 255, 0.5);
+            box-shadow: none;
+        }
+        .btn.secondary:hover {
+            background: rgba(0, 198, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 198, 255, 0.25);
+        }
+        .btn.danger {
+            background: linear-gradient(135deg, #ff4e6a 0%, #ff2d87 100%);
+            box-shadow: 0 4px 20px rgba(255, 78, 106, 0.35);
+        }
+
+        /* ─── Screens ─── */
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 100vh;
+            position: absolute;
+            top: 0; left: 0;
+            padding: 20px;
+        }
+        .screen.active {
+            display: flex;
+            animation: screenIn 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        @keyframes screenIn {
+            from { opacity: 0; transform: translateY(24px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ─── Lobby ─── */
+        .lobby-box {
+            padding: 40px 50px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+        }
+        .lobby-divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 28px 0;
+            color: #5a6a80;
+            font-size: 0.9rem;
+        }
+        .lobby-divider::before, .lobby-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.08);
+        }
+        .input-field {
+            width: 100%;
+            padding: 14px 20px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 1.15rem;
+            text-align: center;
+            letter-spacing: 3px;
+            font-weight: 600;
+            outline: none;
+            transition: border-color 0.3s;
+            margin-bottom: 14px;
+        }
+        .input-field:focus {
+            border-color: rgba(0, 198, 255, 0.5);
+            box-shadow: 0 0 15px rgba(0, 198, 255, 0.15);
+        }
+        .input-field::placeholder {
+            color: #4a5568;
+            letter-spacing: 1px;
+            font-weight: 400;
+        }
+        .room-code {
+            font-size: 2.4rem;
+            font-weight: 800;
+            letter-spacing: 6px;
+            color: #00e5ff;
+            text-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+            margin: 16px 0;
+            font-family: 'Outfit', monospace;
+        }
+        .copy-hint {
+            font-size: 0.85rem;
+            color: #5a6a80;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .copy-hint:hover { color: #00e5ff; }
+
+        /* ─── Status / Connection ─── */
+        .status-bar {
+            padding: 12px 28px;
+            margin-bottom: 16px;
+            font-size: 1.05rem;
+            text-align: center;
+            color: #b0bec5;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .dot-pulse {
+            display: inline-block;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #00e5ff;
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        .status-hit { color: #ff4e6a !important; }
+        .status-miss { color: #00e5ff !important; }
+        .status-sunk { color: #ffab00 !important; }
+        .status-wait { color: #7a8ba8 !important; }
+
+        /* ─── Grids ─── */
+        .boards-layout {
+            display: flex;
+            gap: 36px;
+            align-items: flex-start;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .board-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 28px;
+        }
+        .board-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 14px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        .board-title.own { color: #00e5ff; }
+        .board-title.enemy { color: #ff4ea0; }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 28px repeat(10, 40px);
+            grid-template-rows: 28px repeat(10, 40px);
+            gap: 2px;
+        }
+        .cell-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            color: #4a5a70;
+            font-weight: 600;
+        }
+        .cell {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 5px;
+            cursor: default;
+            transition: all 0.2s ease;
+            position: relative;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .clickable .cell:not(.hit):not(.miss) {
+            cursor: crosshair;
+        }
+        .clickable .cell:not(.hit):not(.miss):hover {
+            background: rgba(255, 78, 160, 0.25);
+            box-shadow: 0 0 14px rgba(255, 78, 160, 0.4), inset 0 0 8px rgba(255, 78, 160, 0.15);
+            border-color: rgba(255, 78, 160, 0.5);
+        }
+
+        .cell.ship {
+            background: rgba(0, 229, 255, 0.25);
+            border-color: rgba(0, 229, 255, 0.4);
+            box-shadow: inset 0 0 10px rgba(0, 229, 255, 0.15);
+        }
+        .cell.hit {
+            background: rgba(255, 50, 50, 0.2);
+            border-color: rgba(255, 50, 50, 0.5);
+        }
+        .cell.hit::after {
+            content: '🔥';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .cell.miss {
+            background: rgba(0, 150, 200, 0.08);
+            border-color: rgba(0, 150, 200, 0.2);
+        }
+        .cell.miss::after {
+            content: '•';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 22px;
+            color: rgba(0, 198, 255, 0.5);
+            animation: pop 0.3s ease;
+        }
+        .cell.sunk {
+            background: rgba(255, 50, 50, 0.35) !important;
+            border-color: #ff3232 !important;
+            box-shadow: 0 0 12px rgba(255, 50, 50, 0.4) !important;
+        }
+        .cell.sunk::after {
+            content: '💥';
+        }
+
+        /* Placement */
+        .cell.placement-ok {
+            background: rgba(0, 230, 118, 0.35);
+            border-color: rgba(0, 230, 118, 0.6);
+            box-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+        }
+        .cell.placement-bad {
+            background: rgba(255, 50, 70, 0.35);
+            border-color: rgba(255, 50, 70, 0.6);
+            box-shadow: 0 0 10px rgba(255, 50, 70, 0.3);
+        }
+        .placement-grid .cell { cursor: pointer; }
+
+        @keyframes pop {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            60% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* ─── Controls ─── */
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .hint {
+            font-size: 0.85rem;
+            color: #4a5a70;
+            margin-top: 8px;
+        }
+
+        /* ─── Turn indicator ─── */
+        .turn-indicator {
+            padding: 10px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+            transition: all 0.4s;
+        }
+        .turn-indicator.your-turn {
+            background: linear-gradient(135deg, rgba(0, 198, 255, 0.2), rgba(124, 77, 255, 0.2));
+            border: 1px solid rgba(0, 198, 255, 0.4);
+            color: #00e5ff;
+            box-shadow: 0 0 20px rgba(0, 198, 255, 0.2);
+            animation: glowPulse 2s ease-in-out infinite;
+        }
+        .turn-indicator.enemy-turn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #5a6a80;
+        }
+        @keyframes glowPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 198, 255, 0.15); }
+            50% { box-shadow: 0 0 30px rgba(0, 198, 255, 0.35); }
+        }
+
+        /* ─── Score ─── */
+        .score-bar {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+        .score-bar span { color: #5a6a80; }
+        .score-bar .val { color: #fff; font-weight: 600; }
+
+        /* ─── Victory ─── */
+        #confetti-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .victory-title {
+            font-size: 4rem !important;
+            margin-bottom: 4px !important;
+        }
+
+        /* ─── Disconnected overlay ─── */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 900;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .overlay.active { display: flex; }
+        .overlay p {
+            font-size: 1.3rem;
+            color: #ff4e6a;
+        }
+
+        /* ─── Responsive ─── */
+
+        /* Tablets */
+        @media (max-width: 900px) {
+            .grid-container {
+                grid-template-columns: 22px repeat(10, 34px);
+                grid-template-rows: 22px repeat(10, 34px);
+                gap: 2px;
+            }
+            .boards-layout { gap: 16px; }
+            .board-wrapper { padding: 16px; }
+            h1 { font-size: 2.4rem; }
+        }
+
+        /* Phones */
+        @media (max-width: 600px) {
+            body {
+                justify-content: flex-start;
+                padding-top: 10px;
+            }
+            .screen {
+                position: relative;
+                min-height: 100vh;
+                min-height: 100dvh;
+                padding: 12px 8px;
+                justify-content: flex-start;
+                padding-top: 20px;
+            }
+            h1 { font-size: 1.8rem; letter-spacing: 2px; margin-bottom: 4px; }
+            h2 { font-size: 1.3rem; margin-bottom: 10px; }
+            .subtitle { font-size: 0.9rem; margin-bottom: 16px; }
+
+            .lobby-box { padding: 24px 20px; }
+            .room-code { font-size: 1.8rem; letter-spacing: 4px; }
+            .input-field { font-size: 1rem; padding: 12px 16px; }
+            .btn { padding: 12px 28px; font-size: 1rem; }
+            .lobby-divider { margin: 18px 0; }
+
+            .boards-layout {
+                flex-direction: column;
+                gap: 10px;
+                align-items: center;
+            }
+            .board-wrapper {
+                padding: 10px 8px;
+                border-radius: 14px;
+                width: 100%;
+                max-width: 370px;
+            }
+            .board-title { font-size: 0.95rem; margin-bottom: 8px; }
+
+            .grid-container {
+                grid-template-columns: 18px repeat(10, 28px);
+                grid-template-rows: 18px repeat(10, 28px);
+                gap: 1px;
+            }
+            .cell-label { font-size: 0.7rem; }
+            .cell { border-radius: 3px; }
+            .cell.hit::after, .cell.sunk::after { font-size: 14px; }
+            .cell.miss::after { font-size: 16px; }
+
+            .turn-indicator { font-size: 0.95rem; padding: 8px 20px; margin-bottom: 8px; }
+            .status-bar { font-size: 0.9rem; padding: 8px 16px; margin-bottom: 10px; min-height: 36px; }
+            .score-bar { font-size: 0.8rem; gap: 16px; margin-bottom: 6px; }
+            .controls { margin-top: 12px; gap: 8px; }
+            .controls .btn { padding: 10px 18px; font-size: 0.9rem; }
+            .hint { font-size: 0.75rem; }
+
+            .glass.status-bar { border-radius: 14px; }
+
+            .victory-title { font-size: 2.5rem !important; }
+        }
+
+        /* Very small phones */
+        @media (max-width: 380px) {
+            .grid-container {
+                grid-template-columns: 16px repeat(10, 25px);
+                grid-template-rows: 16px repeat(10, 25px);
+                gap: 1px;
+            }
+            .cell.hit::after, .cell.sunk::after { font-size: 12px; }
+            .cell.miss::after { font-size: 14px; }
+            h1 { font-size: 1.5rem; }
+            .board-wrapper { padding: 8px 6px; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<!-- Disconnect overlay -->
+<div class="overlay" id="overlay-disconnect">
+    <p>⚠️ Противник отключился</p>
+    <button class="btn danger" onclick="location.reload()">Вернуться в меню</button>
+</div>
+
+<!-- ══════════════════ SCREEN: START ══════════════════ -->
+<div id="screen-start" class="screen active">
+    <h1>Морской Бой</h1>
+    <p class="subtitle">Играй онлайн 🌊</p>
+    <div class="glass lobby-box">
+        <button class="btn" id="btn-create" onclick="createRoom()">Создать комнату</button>
+
+        <!-- Room created info (hidden by default) -->
+        <div id="room-created" style="display:none; margin-top: 20px;">
+            <p style="color:#7a8ba8; font-size:0.95rem;">Код комнаты:</p>
+            <div class="room-code" id="room-code-display">—</div>
+            <p class="copy-hint" id="copy-hint" onclick="copyCode()">📋 Нажми, чтобы скопировать</p>
+            <p style="color:#5a6a80; margin-top:16px; font-size:0.9rem;">
+                <span class="dot-pulse"></span>&nbsp; Ожидание подключения противника...
+            </p>
+        </div>
+
+        <div class="lobby-divider">или</div>
+
+        <input class="input-field" id="join-code-input" type="text" placeholder="Введи код комнаты" maxlength="10" autocomplete="off">
+        <button class="btn secondary" id="btn-join" onclick="joinRoom()">Подключиться</button>
+
+        <p id="lobby-error" style="color:#ff4e6a; margin-top:14px; font-size:0.9rem; display:none;"></p>
+    </div>
+</div>
+
+<!-- ══════════════════ SCREEN: PLACEMENT ══════════════════ -->
+<div id="screen-placement" class="screen">
+    <h2>Расставь свои корабли</h2>
+    <div class="glass status-bar" id="placement-status">Размести корабль (длина: 4)</div>
+    <div class="glass board-wrapper">
+        <div id="placement-grid" class="grid-container placement-grid"></div>
+    </div>
+    <div class="controls">
+        <button class="btn secondary" onclick="rotateShip()">↻ Повернуть (R)</button>
+        <button class="btn secondary" onclick="randomPlacement()">🎲 Случайно</button>
+        <button class="btn" id="btn-ready" style="display:none;" onclick="playerReady()">✅ Готово!</button>
+    </div>
+    <p class="hint">Нажми R для поворота · Клик для размещения</p>
+    <div id="waiting-opponent" style="display:none; margin-top:18px; color:#7a8ba8;">
+        <span class="dot-pulse"></span>&nbsp; Ожидание готовности противника...
+    </div>
+</div>
+
+<!-- ══════════════════ SCREEN: BATTLE ══════════════════ -->
+<div id="screen-battle" class="screen">
+    <div class="turn-indicator" id="turn-indicator">Ваш ход</div>
+    <div class="glass status-bar" id="battle-status">Выберите клетку для выстрела</div>
+    <div class="score-bar">
+        <div>Ваши попадания: <span class="val" id="score-mine">0</span></div>
+        <div>Попадания врага: <span class="val" id="score-enemy">0</span></div>
+    </div>
+    <div class="boards-layout">
+        <div class="glass board-wrapper">
+            <div class="board-title own">🚢 Ваш флот</div>
+            <div id="own-grid" class="grid-container"></div>
+        </div>
+        <div class="glass board-wrapper">
+            <div class="board-title enemy">🎯 Флот противника</div>
+            <div id="enemy-grid" class="grid-container"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════ SCREEN: VICTORY ══════════════════ -->
+<div id="screen-victory" class="screen">
+    <h1 class="victory-title" id="victory-title">ПОБЕДА!</h1>
+    <p class="subtitle" id="victory-sub">Вы уничтожили весь флот противника!</p>
+    <div class="glass" style="padding:40px; text-align:center;">
+        <p style="font-size:1.2rem; color:#7a8ba8; margin-bottom:24px;" id="victory-stats"></p>
+        <button class="btn" onclick="location.reload()">Играть снова</button>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════
+const LETTERS = ['А','Б','В','Г','Д','Е','Ж','З','И','К'];
+const FLEET = [4, 3, 2, 2, 1, 1, 1];
+const TOTAL_SHIP_CELLS = FLEET.reduce((a, b) => a + b, 0); // 14
+
+// ═══════════════════════════════════════════
+//  AUDIO
+// ═══════════════════════════════════════════
+let audioCtx;
+function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function playSound(type) {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    if (type === 'hit') {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(200, now);
+        o.frequency.exponentialRampToValueAtTime(50, now + 0.25);
+        g.gain.setValueAtTime(0.4, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(now); o.stop(now + 0.25);
+    } else if (type === 'miss') {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(350, now);
+        o.frequency.exponentialRampToValueAtTime(120, now + 0.18);
+        g.gain.setValueAtTime(0.25, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(now); o.stop(now + 0.18);
+    } else if (type === 'sunk') {
+        [200, 160, 100].forEach((f, i) => {
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.type = 'sawtooth'; o.frequency.value = f;
+            g.gain.setValueAtTime(0, now + i * 0.08);
+            g.gain.linearRampToValueAtTime(0.35, now + i * 0.08 + 0.04);
+            g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.2);
+            o.connect(g); g.connect(audioCtx.destination);
+            o.start(now + i * 0.08); o.stop(now + i * 0.08 + 0.2);
+        });
+    } else if (type === 'win') {
+        [523, 659, 784, 1047].forEach((f, i) => {
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.type = 'square'; o.frequency.value = f;
+            g.gain.setValueAtTime(0, now + i * 0.12);
+            g.gain.linearRampToValueAtTime(0.18, now + i * 0.12 + 0.05);
+            g.gain.linearRampToValueAtTime(0, now + i * 0.12 + 0.35);
+            o.connect(g); g.connect(audioCtx.destination);
+            o.start(now + i * 0.12); o.stop(now + i * 0.12 + 0.35);
+        });
+    } else if (type === 'place') {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = 600;
+        g.gain.setValueAtTime(0.15, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(now); o.stop(now + 0.1);
+    }
+}
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let myBoard = [];    // 10x10: { ship: bool, shipId: -1, hit: bool }
+let enemyBoard = []; // 10x10: { hit: bool, result: null|'hit'|'miss', sunk: bool, shipId: -1 }
+let myShips = [];    // [{ id, coords: [{x,y}], len }]
+
+let peer = null;
+let conn = null;
+let isHost = false;
+let myTurn = false;
+let gamePhase = 'lobby'; // lobby | placing | waiting | battle | over
+
+let placementShipIdx = 0;
+let placementHorizontal = true;
+
+let myHits = 0;
+let enemyHits = 0;
+
+// ═══════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════
+function freshMyBoard() {
+    myBoard = [];
+    for (let y = 0; y < 10; y++) {
+        myBoard[y] = [];
+        for (let x = 0; x < 10; x++) {
+            myBoard[y][x] = { ship: false, shipId: -1, hit: false };
+        }
+    }
+}
+function freshEnemyBoard() {
+    enemyBoard = [];
+    for (let y = 0; y < 10; y++) {
+        enemyBoard[y] = [];
+        for (let x = 0; x < 10; x++) {
+            enemyBoard[y][x] = { hit: false, result: null, sunk: false, shipId: -1 };
+        }
+    }
+}
+
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function genRoomCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+}
+
+// ═══════════════════════════════════════════
+//  NETWORKING (PeerJS)
+// ═══════════════════════════════════════════
+function createRoom() {
+    initAudio();
+    const code = genRoomCode();
+    document.getElementById('btn-create').disabled = true;
+    document.getElementById('btn-join').disabled = true;
+
+    peer = new Peer('morskoy-boy-' + code);
+
+    peer.on('open', function() {
+        document.getElementById('room-created').style.display = 'block';
+        document.getElementById('room-code-display').textContent = code;
+    });
+
+    peer.on('connection', function(c) {
+        conn = c;
+        isHost = true;
+        setupConnection();
+    });
+
+    peer.on('error', function(err) {
+        showLobbyError('Ошибка соединения: ' + err.type);
+        document.getElementById('btn-create').disabled = false;
+        document.getElementById('btn-join').disabled = false;
+    });
+}
+
+function joinRoom() {
+    initAudio();
+    const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+    if (!code) { showLobbyError('Введите код комнаты!'); return; }
+
+    document.getElementById('btn-create').disabled = true;
+    document.getElementById('btn-join').disabled = true;
+
+    peer = new Peer();
+
+    peer.on('open', function() {
+        conn = peer.connect('morskoy-boy-' + code, { reliable: true });
+        isHost = false;
+        conn.on('open', function() { setupConnection(); });
+        conn.on('error', function() {
+            showLobbyError('Не удалось подключиться. Проверьте код.');
+            document.getElementById('btn-create').disabled = false;
+            document.getElementById('btn-join').disabled = false;
+        });
+    });
+
+    peer.on('error', function(err) {
+        if (err.type === 'peer-unavailable') {
+            showLobbyError('Комната не найдена. Проверьте код.');
+        } else {
+            showLobbyError('Ошибка: ' + err.type);
+        }
+        document.getElementById('btn-create').disabled = false;
+        document.getElementById('btn-join').disabled = false;
+    });
+}
+
+function setupConnection() {
+    conn.on('data', handleMessage);
+    conn.on('close', function() {
+        if (gamePhase !== 'over') {
+            document.getElementById('overlay-disconnect').classList.add('active');
+        }
+    });
+    // Start placement phase
+    startPlacement();
+}
+
+function sendMsg(obj) {
+    if (conn && conn.open) conn.send(obj);
+}
+
+function handleMessage(data) {
+    switch (data.type) {
+        case 'ready':
+            opponentReady(data);
+            break;
+        case 'shoot':
+            handleIncomingShot(data);
+            break;
+        case 'shot-result':
+            handleShotResult(data);
+            break;
+    }
+}
+
+function showLobbyError(msg) {
+    const el = document.getElementById('lobby-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+function copyCode() {
+    const code = document.getElementById('room-code-display').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+        document.getElementById('copy-hint').textContent = '✅ Скопировано!';
+        setTimeout(() => {
+            document.getElementById('copy-hint').textContent = '📋 Нажми, чтобы скопировать';
+        }, 2000);
+    });
+}
+
+// ═══════════════════════════════════════════
+//  PLACEMENT PHASE
+// ═══════════════════════════════════════════
+function startPlacement() {
+    gamePhase = 'placing';
+    freshMyBoard();
+    freshEnemyBoard();
+    myShips = [];
+    placementShipIdx = 0;
+    placementHorizontal = true;
+    myHits = 0;
+    enemyHits = 0;
+
+    showScreen('screen-placement');
+    document.getElementById('btn-ready').style.display = 'none';
+    document.getElementById('waiting-opponent').style.display = 'none';
+    updatePlacementStatus();
+    renderPlacementGrid();
+}
+
+function updatePlacementStatus() {
+    const el = document.getElementById('placement-status');
+    if (placementShipIdx < FLEET.length) {
+        el.textContent = 'Размести корабль (длина: ' + FLEET[placementShipIdx] + ')';
+    } else {
+        el.textContent = 'Все корабли расставлены! Нажми «Готово»';
+        document.getElementById('btn-ready').style.display = 'inline-block';
+    }
+}
+
+function renderPlacementGrid() {
+    const container = document.getElementById('placement-grid');
+    container.innerHTML = '';
+
+    // Corner
+    container.appendChild(document.createElement('div'));
+
+    // Col labels
+    for (let i = 1; i <= 10; i++) {
+        const lbl = document.createElement('div');
+        lbl.className = 'cell-label';
+        lbl.textContent = i;
+        container.appendChild(lbl);
+    }
+
+    for (let y = 0; y < 10; y++) {
+        const rl = document.createElement('div');
+        rl.className = 'cell-label';
+        rl.textContent = LETTERS[y];
+        container.appendChild(rl);
+
+        for (let x = 0; x < 10; x++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.x = x;
+            cell.dataset.y = y;
+
+            if (myBoard[y][x].ship) cell.classList.add('ship');
+
+            cell.addEventListener('click', function() { placementClick(x, y); });
+            cell.addEventListener('mouseenter', function() { placementHover(x, y); });
+            cell.addEventListener('mouseleave', function() { clearPlacementHover(); });
+
+            container.appendChild(cell);
+        }
+    }
+}
+
+function isValidPlacement(board, x, y, len, horiz) {
+    if (horiz && x + len > 10) return false;
+    if (!horiz && y + len > 10) return false;
+
+    for (let i = 0; i < len; i++) {
+        const cx = horiz ? x + i : x;
+        const cy = horiz ? y : y + i;
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                const nx = cx + dx, ny = cy + dy;
+                if (nx >= 0 && nx < 10 && ny >= 0 && ny < 10) {
+                    if (board[ny][nx].ship) return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+function placementHover(x, y) {
+    clearPlacementHover();
+    if (placementShipIdx >= FLEET.length) return;
+    const len = FLEET[placementShipIdx];
+    const valid = isValidPlacement(myBoard, x, y, len, placementHorizontal);
+    const container = document.getElementById('placement-grid');
+
+    for (let i = 0; i < len; i++) {
+        const cx = placementHorizontal ? x + i : x;
+        const cy = placementHorizontal ? y : y + i;
+        if (cx < 10 && cy < 10) {
+            const cell = container.querySelector('.cell[data-x="' + cx + '"][data-y="' + cy + '"]');
+            if (cell) cell.classList.add(valid ? 'placement-ok' : 'placement-bad');
+        }
+    }
+}
+
+function clearPlacementHover() {
+    document.querySelectorAll('#placement-grid .placement-ok, #placement-grid .placement-bad').forEach(c => {
+        c.classList.remove('placement-ok', 'placement-bad');
+    });
+}
+
+function placementClick(x, y) {
+    if (placementShipIdx >= FLEET.length) return;
+    const len = FLEET[placementShipIdx];
+    if (!isValidPlacement(myBoard, x, y, len, placementHorizontal)) return;
+
+    const shipId = myShips.length;
+    const coords = [];
+    for (let i = 0; i < len; i++) {
+        const cx = placementHorizontal ? x + i : x;
+        const cy = placementHorizontal ? y : y + i;
+        myBoard[cy][cx] = { ship: true, shipId: shipId, hit: false };
+        coords.push({ x: cx, y: cy });
+    }
+    myShips.push({ id: shipId, coords: coords, len: len });
+    placementShipIdx++;
+
+    playSound('place');
+    renderPlacementGrid();
+    updatePlacementStatus();
+}
+
+function rotateShip() {
+    placementHorizontal = !placementHorizontal;
+}
+
+window.addEventListener('keydown', function(e) {
+    if ((e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К') && (gamePhase === 'placing')) {
+        rotateShip();
+    }
+});
+
+function randomPlacement() {
+    freshMyBoard();
+    myShips = [];
+    placementShipIdx = 0;
+
+    let attempts = 0;
+    while (placementShipIdx < FLEET.length && attempts < 5000) {
+        attempts++;
+        const x = Math.floor(Math.random() * 10);
+        const y = Math.floor(Math.random() * 10);
+        const horiz = Math.random() > 0.5;
+        const len = FLEET[placementShipIdx];
+
+        if (isValidPlacement(myBoard, x, y, len, horiz)) {
+            const shipId = myShips.length;
+            const coords = [];
+            for (let i = 0; i < len; i++) {
+                const cx = horiz ? x + i : x;
+                const cy = horiz ? y : y + i;
+                myBoard[cy][cx] = { ship: true, shipId: shipId, hit: false };
+                coords.push({ x: cx, y: cy });
+            }
+            myShips.push({ id: shipId, coords: coords, len: len });
+            placementShipIdx++;
+        }
+    }
+
+    playSound('hit');
+    renderPlacementGrid();
+    updatePlacementStatus();
+}
+
+// ═══════════════════════════════════════════
+//  READY / WAITING
+// ═══════════════════════════════════════════
+let iAmReady = false;
+let opponentIsReady = false;
+
+function playerReady() {
+    if (placementShipIdx < FLEET.length) return;
+    iAmReady = true;
+    document.getElementById('btn-ready').disabled = true;
+    document.getElementById('btn-ready').textContent = '✅ Готов!';
+    document.getElementById('waiting-opponent').style.display = 'block';
+    gamePhase = 'waiting';
+
+    sendMsg({ type: 'ready' });
+
+    if (opponentIsReady) startBattle();
+}
+
+function opponentReady() {
+    opponentIsReady = true;
+    if (iAmReady) startBattle();
+}
+
+// ═══════════════════════════════════════════
+//  BATTLE PHASE
+// ═══════════════════════════════════════════
+function startBattle() {
+    gamePhase = 'battle';
+    myTurn = isHost; // Host goes first
+    showScreen('screen-battle');
+    updateTurnUI();
+    renderOwnGrid();
+    renderEnemyGrid();
+}
+
+function updateTurnUI() {
+    const ti = document.getElementById('turn-indicator');
+    const status = document.getElementById('battle-status');
+    if (myTurn) {
+        ti.textContent = '🎯 Ваш ход';
+        ti.className = 'turn-indicator your-turn';
+        status.textContent = 'Выберите клетку для выстрела';
+        status.className = 'glass status-bar';
+    } else {
+        ti.textContent = '⏳ Ход противника';
+        ti.className = 'turn-indicator enemy-turn';
+        status.textContent = 'Ожидайте выстрел противника...';
+        status.className = 'glass status-bar status-wait';
+    }
+    document.getElementById('score-mine').textContent = myHits;
+    document.getElementById('score-enemy').textContent = enemyHits;
+}
+
+function renderOwnGrid() {
+    const container = document.getElementById('own-grid');
+    container.innerHTML = '';
+    container.appendChild(document.createElement('div'));
+
+    for (let i = 1; i <= 10; i++) {
+        const lbl = document.createElement('div');
+        lbl.className = 'cell-label';
+        lbl.textContent = i;
+        container.appendChild(lbl);
+    }
+
+    for (let y = 0; y < 10; y++) {
+        const rl = document.createElement('div');
+        rl.className = 'cell-label';
+        rl.textContent = LETTERS[y];
+        container.appendChild(rl);
+
+        for (let x = 0; x < 10; x++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            const d = myBoard[y][x];
+
+            if (d.ship && !d.hit) cell.classList.add('ship');
+            if (d.hit && d.ship) {
+                cell.classList.add('hit');
+                if (isMyShipSunk(d.shipId)) cell.classList.add('sunk');
+            }
+            if (d.hit && !d.ship) cell.classList.add('miss');
+
+            container.appendChild(cell);
+        }
+    }
+}
+
+function renderEnemyGrid() {
+    const container = document.getElementById('enemy-grid');
+    container.innerHTML = '';
+
+    if (myTurn) container.classList.add('clickable');
+    else container.classList.remove('clickable');
+
+    container.appendChild(document.createElement('div'));
+
+    for (let i = 1; i <= 10; i++) {
+        const lbl = document.createElement('div');
+        lbl.className = 'cell-label';
+        lbl.textContent = i;
+        container.appendChild(lbl);
+    }
+
+    for (let y = 0; y < 10; y++) {
+        const rl = document.createElement('div');
+        rl.className = 'cell-label';
+        rl.textContent = LETTERS[y];
+        container.appendChild(rl);
+
+        for (let x = 0; x < 10; x++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            const d = enemyBoard[y][x];
+
+            if (d.hit) {
+                if (d.result === 'hit') {
+                    cell.classList.add('hit');
+                    if (d.sunk) cell.classList.add('sunk');
+                } else {
+                    cell.classList.add('miss');
+                }
+            }
+
+            if (myTurn && !d.hit) {
+                cell.addEventListener('click', function() { shootAt(x, y); });
+            }
+
+            container.appendChild(cell);
+        }
+    }
+}
+
+function shootAt(x, y) {
+    if (!myTurn || gamePhase !== 'battle') return;
+    if (enemyBoard[y][x].hit) return;
+
+    myTurn = false; // Prevent double-click
+    sendMsg({ type: 'shoot', x: x, y: y });
+
+    const status = document.getElementById('battle-status');
+    status.textContent = 'Ожидание результата...';
+    status.className = 'glass status-bar status-wait';
+    renderEnemyGrid();
+}
+
+// Enemy shot at me
+function handleIncomingShot(data) {
+    const x = data.x, y = data.y;
+    myBoard[y][x].hit = true;
+
+    const isHit = myBoard[y][x].ship;
+    let isSunk = false;
+    let sunkShipId = -1;
+    let sunkCoords = [];
+    let gameOver = false;
+
+    if (isHit) {
+        sunkShipId = myBoard[y][x].shipId;
+        isSunk = isMyShipSunk(sunkShipId);
+        if (isSunk) {
+            sunkCoords = myShips.find(s => s.id === sunkShipId).coords;
+            // Mark surrounding cells
+            markSurroundingMiss(sunkShipId);
+        }
+        enemyHits++;
+        gameOver = enemyHits >= TOTAL_SHIP_CELLS;
+    }
+
+    sendMsg({
+        type: 'shot-result',
+        x: x, y: y,
+        hit: isHit,
+        sunk: isSunk,
+        sunkShipId: sunkShipId,
+        sunkCoords: sunkCoords,
+        gameOver: gameOver
+    });
+
+    renderOwnGrid();
+
+    if (gameOver) {
+        gamePhase = 'over';
+        setTimeout(function() { showDefeat(); }, 800);
+    } else if (isHit) {
+        // Enemy hit — they go again
+        myTurn = false;
+        updateTurnUI();
+        renderEnemyGrid();
+
+        const status = document.getElementById('battle-status');
+        if (isSunk) {
+            status.textContent = '💀 Противник потопил ваш корабль!';
+            status.className = 'glass status-bar status-sunk';
+            playSound('sunk');
+        } else {
+            status.textContent = '🔥 Противник попал!';
+            status.className = 'glass status-bar status-hit';
+            playSound('hit');
+        }
+    } else {
+        // Enemy missed — my turn now
+        myTurn = true;
+        updateTurnUI();
+        renderEnemyGrid();
+        const status = document.getElementById('battle-status');
+        status.textContent = '🌊 Противник промахнулся! Ваш ход.';
+        status.className = 'glass status-bar status-miss';
+        playSound('miss');
+    }
+
+    document.getElementById('score-enemy').textContent = enemyHits;
+}
+
+// Result of my shot
+function handleShotResult(data) {
+    const x = data.x, y = data.y;
+    enemyBoard[y][x].hit = true;
+    enemyBoard[y][x].result = data.hit ? 'hit' : 'miss';
+
+    if (data.hit) {
+        myHits++;
+        playSound('hit');
+
+        if (data.sunk) {
+            enemyBoard[y][x].sunk = true;
+            // Mark all coords of sunk ship
+            if (data.sunkCoords) {
+                data.sunkCoords.forEach(function(c) {
+                    enemyBoard[c.y][c.x].sunk = true;
+                    enemyBoard[c.y][c.x].hit = true;
+                    enemyBoard[c.y][c.x].result = 'hit';
+                });
+                // Mark surrounding cells as miss
+                data.sunkCoords.forEach(function(c) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dx = -1; dx <= 1; dx++) {
+                            const nx = c.x + dx, ny = c.y + dy;
+                            if (nx >= 0 && nx < 10 && ny >= 0 && ny < 10 && !enemyBoard[ny][nx].hit) {
+                                enemyBoard[ny][nx].hit = true;
+                                enemyBoard[ny][nx].result = 'miss';
+                            }
+                        }
+                    }
+                });
+            }
+            playSound('sunk');
+        }
+    } else {
+        playSound('miss');
+    }
+
+    document.getElementById('score-mine').textContent = myHits;
+
+    if (data.gameOver) {
+        gamePhase = 'over';
+        renderEnemyGrid();
+        setTimeout(function() { showVictory(); }, 800);
+        return;
+    }
+
+    const status = document.getElementById('battle-status');
+    if (data.hit) {
+        myTurn = true;
+        if (data.sunk) {
+            status.textContent = '💀 Убил! Стреляйте ещё!';
+            status.className = 'glass status-bar status-sunk';
+        } else {
+            status.textContent = '🔥 Попадание! Стреляйте ещё!';
+            status.className = 'glass status-bar status-hit';
+        }
+    } else {
+        myTurn = false;
+        status.textContent = '🌊 Мимо. Ход противника.';
+        status.className = 'glass status-bar status-miss';
+    }
+
+    updateTurnUI();
+    renderEnemyGrid();
+    renderOwnGrid();
+}
+
+// ═══════════════════════════════════════════
+//  SHIP UTILS
+// ═══════════════════════════════════════════
+function isMyShipSunk(shipId) {
+    const ship = myShips.find(s => s.id === shipId);
+    if (!ship) return false;
+    return ship.coords.every(c => myBoard[c.y][c.x].hit);
+}
+
+function markSurroundingMiss(shipId) {
+    const ship = myShips.find(s => s.id === shipId);
+    if (!ship) return;
+    ship.coords.forEach(function(c) {
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                const nx = c.x + dx, ny = c.y + dy;
+                if (nx >= 0 && nx < 10 && ny >= 0 && ny < 10) {
+                    if (!myBoard[ny][nx].hit && !myBoard[ny][nx].ship) {
+                        myBoard[ny][nx].hit = true;
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ═══════════════════════════════════════════
+//  VICTORY / DEFEAT
+// ═══════════════════════════════════════════
+function showVictory() {
+    gamePhase = 'over';
+    showScreen('screen-victory');
+    document.getElementById('victory-title').textContent = '🏆 ПОБЕДА!';
+    document.getElementById('victory-sub').textContent = 'Вы уничтожили весь флот противника!';
+    document.getElementById('victory-stats').textContent = 'Ваших попаданий: ' + myHits + ' · Попаданий врага: ' + enemyHits;
+    playSound('win');
+    startConfetti();
+}
+
+function showDefeat() {
+    gamePhase = 'over';
+    showScreen('screen-victory');
+    document.getElementById('victory-title').textContent = '😢 ПОРАЖЕНИЕ';
+    document.getElementById('victory-title').style.background = 'linear-gradient(135deg, #ff4e6a, #ff2d87)';
+    document.getElementById('victory-title').style.webkitBackgroundClip = 'text';
+    document.getElementById('victory-title').style.webkitTextFillColor = 'transparent';
+    document.getElementById('victory-sub').textContent = 'Противник уничтожил ваш флот!';
+    document.getElementById('victory-stats').textContent = 'Ваших попаданий: ' + myHits + ' · Попаданий врага: ' + enemyHits;
+}
+
+// ═══════════════════════════════════════════
+//  CONFETTI
+// ═══════════════════════════════════════════
+function startConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const colors = ['#00e5ff', '#7c4dff', '#ff4ea0', '#ffab00', '#00e676', '#fff'];
+    const particles = [];
+
+    for (let i = 0; i < 160; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height - canvas.height,
+            w: Math.random() * 10 + 4,
+            h: Math.random() * 6 + 3,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            vy: Math.random() * 3 + 1.5,
+            vx: Math.random() * 2 - 1,
+            rot: Math.random() * 360,
+            rs: Math.random() * 8 - 4
+        });
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(function(p) {
+            p.y += p.vy;
+            p.x += p.vx;
+            p.rot += p.rs;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot * Math.PI / 180);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = 0.85;
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            ctx.restore();
+            if (p.y > canvas.height + 20) {
+                p.y = -20;
+                p.x = Math.random() * canvas.width;
+            }
+        });
+        if (gamePhase === 'over') requestAnimationFrame(draw);
+    }
+    draw();
+}
+</script>
+</body>
+</html>
